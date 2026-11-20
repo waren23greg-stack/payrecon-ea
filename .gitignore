@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Generated outputs
+reports/
+reports_clean/
+runs/
+*.db
+*.sqlite3
+
+# Real data must never be committed
+data/private/
+*.private.csv
+
+# Node
+node_modules/
+frontend/dist/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

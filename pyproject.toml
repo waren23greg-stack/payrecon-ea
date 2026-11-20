@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "payrecon-ea"
+version = "0.1.0"
+description = "Mobile-money and multichannel order reconciliation with SQL data-quality checks, built for East African payment systems."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = []
+
+[project.optional-dependencies]
+api = ["fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9", "pydantic>=2.6"]
+postgres = ["psycopg[binary]>=3.1"]
+analytics = ["pandas>=2.2"]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
