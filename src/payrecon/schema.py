@@ -6,7 +6,7 @@ Plain data only: no I/O and no third-party imports.
 
 Money is always an integer count of minor units (see Currency.exponent).
 Timestamps are stored as UTC ISO-8601 strings. Phone numbers are never
-stored raw, only as a salted hash.
+stored raw: only as a keyed hash plus a masked hint (254798***048).
 """
 
 from __future__ import annotations
@@ -88,8 +88,9 @@ class Provider:
     receipt_pattern: str | None  # regex for the transaction id; None = unknown
 
 
-# Receipt formats are listed only where observed. Verify against real exports
-# before relying on them. Adding a provider = one line here + one adapter.
+# Receipt formats are listed only where observed (MPESA_KE matched every line
+# of a real statement). Verify the others against real exports before relying
+# on them. Adding a provider = one line here + one adapter.
 PROVIDERS: dict[str, Provider] = {
     p.code: p
     for p in (
@@ -109,8 +110,21 @@ PROVIDERS: dict[str, Provider] = {
 CHANNELS = ("WEB", "APP", "USSD", "POS")
 ORDER_STATUSES = ("COMPLETED", "PENDING", "CANCELLED", "REFUNDED")
 PAYMENT_STATUSES = ("SUCCESS", "FAILED", "PENDING", "REVERSED")
-PAYMENT_KINDS = ("PAYMENT", "REVERSAL")
-PAYMENT_METHODS = ("PAYBILL", "TILL", "STK_PUSH", "CARD", "OTHER")
+PAYMENT_KINDS = (
+    "PAYMENT",  # money for goods or services
+    "REVERSAL",
+    "CHARGE",  # provider or gateway fee line
+    "OVERDRAFT_DRAW",  # e.g. a Fuliza funding leg: credit, not customer money
+    "OVERDRAFT_REPAYMENT",
+    "OTHER",
+)
+DIRECTIONS = ("IN", "OUT")
+PAYMENT_METHODS = ("PAYBILL", "TILL", "STK_PUSH", "P2P", "CARD", "OTHER")
+
+# One statement line is identified by these columns, NOT by receipt_no alone:
+# a single receipt can carry several lines (a payment, its charge and an
+# overdraft draw). Only (kind PAYMENT, direction IN) is customer money received.
+PAYMENT_KEY = ("provider", "receipt_no", "kind", "direction")
 
 
 # ---------------------------------------------------------------------------
@@ -136,7 +150,8 @@ ORDER_COLUMNS: tuple[Column, ...] = (
     Column("channel", "TEXT", False, "Origin channel, one of CHANNELS"),
     Column("customer_id", "TEXT", True, "Customer id from the source system"),
     Column("bill_ref", "TEXT", True, "Normalized reference the payer should quote"),
-    Column("phone_hash", "TEXT", True, "Salted hash of the E.164 phone number"),
+    Column("phone_hash", "TEXT", True, "Keyed hash of the E.164 phone number"),
+    Column("phone_hint", "TEXT", True, "Masked phone: first 6 and last 3 digits"),
     Column("order_ts_raw", "TEXT", True, "Order timestamp exactly as received"),
     Column("order_ts_utc", "TEXT", True, "Order timestamp as UTC ISO-8601"),
     Column("amount_minor", "INTEGER", True, "Order total in minor units"),
@@ -148,16 +163,18 @@ ORDER_COLUMNS: tuple[Column, ...] = (
 
 PAYMENT_COLUMNS: tuple[Column, ...] = (
     Column("provider", "TEXT", False, "Provider code, one of PROVIDERS"),
-    Column("receipt_no", "TEXT", True, "Provider transaction id (idempotency key)"),
-    Column("kind", "TEXT", False, "PAYMENT or REVERSAL"),
+    Column("receipt_no", "TEXT", True, "Provider transaction id; one receipt, several lines"),
+    Column("kind", "TEXT", False, "Line role, one of PAYMENT_KINDS"),
+    Column("direction", "TEXT", False, "IN or OUT of the account; amount is positive"),
     Column("original_receipt_no", "TEXT", True, "For reversals: receipt reversed"),
     Column("method", "TEXT", False, "How the payer paid, one of PAYMENT_METHODS"),
     Column("bill_ref_raw", "TEXT", True, "Account number as the payer typed it"),
     Column("bill_ref", "TEXT", True, "Normalized bill reference"),
-    Column("phone_hash", "TEXT", True, "Salted hash of the payer's E.164 phone"),
+    Column("phone_hash", "TEXT", True, "Keyed hash of the payer's E.164 phone"),
+    Column("phone_hint", "TEXT", True, "Masked payer phone, e.g. 254798***048"),
     Column("paid_ts_raw", "TEXT", True, "Payment timestamp exactly as received"),
     Column("paid_ts_utc", "TEXT", True, "Payment timestamp as UTC ISO-8601"),
-    Column("amount_minor", "INTEGER", True, "Amount in minor units"),
+    Column("amount_minor", "INTEGER", True, "Amount in minor units, never negative"),
     Column("fee_minor", "INTEGER", True, "Provider or gateway fee, if reported"),
     Column("currency", "TEXT", False, "ISO 4217 code, one of CURRENCIES"),
     Column("status", "TEXT", False, "Normalized status; unknown values are kept"),
