@@ -360,3 +360,41 @@ def parse_timestamp(raw: object, country: str = DEFAULT_COUNTRY) -> str | None:
         return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     except (OverflowError, ValueError):
         raise NormalizationError("unparseable_timestamp", s) from None
+
+
+# ---------------------------------------------------------------------------
+# Masked phone hints
+# ---------------------------------------------------------------------------
+# Statements print counterparties as '254798***048' (6+3 digits) or '2547***716'
+# (4+3 digits). A hint is a quasi-identifier, not a number: it can only help match
+# a payment to an order when amount and time agree too.
+
+_HINT_RE = re.compile(r"(\d{4,6})\*{3}(\d{3})")
+
+
+def phone_hint(e164: str, prefix_digits: int = 6) -> str:
+    """Mask an E.164 number like a statement does: '+254798123048' -> '254798***048'."""
+    digits = re.sub(r"\D", "", e164)
+    if not 4 <= prefix_digits <= 6 or len(digits) < prefix_digits + 3:
+        raise NormalizationError("bad_phone_length")
+    return f"{digits[:prefix_digits]}***{digits[-3:]}"
+
+
+def parse_phone_hint(raw: object) -> str | None:
+    """Canonical hint from printed text ('254798***048', 4-6 leading digits), or None if blank."""
+    s = _clean(raw)
+    if s is None:
+        return None
+    match = _HINT_RE.fullmatch(re.sub(r"\s+", "", s))
+    if match is None:
+        raise NormalizationError("bad_phone_hint")
+    return f"{match.group(1)}***{match.group(2)}"
+
+
+def hints_compatible(a: str, b: str) -> bool:
+    """Could two hints belong to one number? Compare the shorter prefix and the suffix."""
+    ma, mb = _HINT_RE.fullmatch(a), _HINT_RE.fullmatch(b)
+    if ma is None or mb is None:
+        return False
+    shared = min(len(ma.group(1)), len(mb.group(1)))
+    return ma.group(1)[:shared] == mb.group(1)[:shared] and ma.group(2) == mb.group(2)
