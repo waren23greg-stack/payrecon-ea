@@ -225,6 +225,7 @@ box only when the session's "done when" is true.
 | [ ] | S10 | `run.py`: one command from files in to report out | S9 | End to end on the sample data |
 | [ ] | S10b | `adapters/daraja.py`: C2B callbacks | S10 | Needs real or sandbox payloads; field names verified |
 | [ ] | S10c | Airtel Money and MTN MoMo adapters | S10 | Needs real exports |
+| [ ] | S10d | `adapters/sms.py`: M-Pesa SMS notifications, a common source for small shops (optional) | S10 | Needs masked sample messages; two-digit years and 12-hour times parse |
 
 ### Phase 3: quality
 
@@ -258,9 +259,10 @@ box only when the session's "done when" is true.
 | Daraja C2B callbacks | Planned | Field names must be verified against Safaricom documentation or the sandbox |
 | Airtel Money, MTN MoMo, card gateways | Planned | No samples yet |
 | Order exports | Planned | Synthetic only |
+| M-Pesa SMS notifications | Planned | Payer-side format seen (two-digit year, 12-hour time); merchant-side messages needed |
 
-Open questions: whether statement times are East Africa Time (assumed), the fee and
-tolerance model, and authentication for the API.
+Open questions: the fee and tolerance model, and authentication for the API. Statement
+times were confirmed as East Africa Time against an SMS notification for one transaction.
 
 ## 10. How we build
 
@@ -317,7 +319,8 @@ Cleanup backlog, handled in S12:
 - Only one real M-Pesa personal statement layout has been checked so far; merchant
   (Paybill and Till) exports and other providers still need real samples.
 - The Postgres DDL is generated but not yet executed against a live server.
-- Statement timestamps are assumed to be East Africa Time.
+- Statement timestamps are treated as East Africa Time. This was confirmed against an
+  SMS notification for one transaction on one statement, not for every provider.
 - No alerting or scheduler; this is a batch audit tool.
 
 ## 13. Glossary
