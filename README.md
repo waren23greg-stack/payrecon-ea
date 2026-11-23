@@ -7,7 +7,7 @@ statements (M-Pesa first) matched against order exports, with every anomaly trac
 to a source row.
 
 > **Status: work in progress.** Phases 0 and 1 (the core library) are done and tested.
-> Phase 2 (the pipeline) is next. This README is also the project map: section 8 is the
+> Phase 2 (the pipeline) is under way. This README is also the project map: section 8 is the
 > full roadmap, and section 1 tells you how to find your place in it.
 
 ## Contents
@@ -126,11 +126,11 @@ payrecon-ea/
     adapters/
       base.py                       [done]  Issue, Rejected, AdaptedPayments
       mpesa_statement.py            [done]  statement rows to canonical payment lines
-      orders.py                     [planned]  order exports to canonical orders
+      orders.py                     [next]     order exports to canonical orders
       daraja.py                     [planned]  Daraja C2B callbacks to canonical payments
       airtel_mtn.py                 [planned]  Airtel Money and MTN MoMo exports
     db.py                           [done]  DDL generator, connections, one database per run
-    loader.py                       [next]  adapter output to database, one transaction per file
+    loader.py                       [done]  adapter output to database, one transaction per file
     reconcile.py                    [planned]  tiered matching
     checks.py                       [planned]  runs sql/checks/*.sql
     report.py                       [planned]  markdown, JSON and CSV outputs
@@ -216,7 +216,7 @@ box only when the session's "done when" is true.
 
 | Done | Session | Deliverable | Depends on | Done when |
 |---|---|---|---|---|
-| [ ] | S5b | `loader.py`: one transaction per file; writes files, rows, issues, rejects, statement summary; idempotent by file hash | S5a, S4c | Loading a file twice is refused; counts reconcile |
+| [x] | S5b | `loader.py`: one transaction per file; writes files, rows, issues, rejects, statement summary; idempotent by file hash | S5a, S4c | Loading a file twice is refused; counts reconcile |
 | [ ] | S5c | `adapters/orders.py`: web, app, USSD and POS exports to canonical orders | S2, S3 | Orders load with references and EAT timestamps |
 | [ ] | S6 | `scripts/generate_sample_data.py`: dirty and clean datasets with ground truth (Paybill, Till, Fuliza lines, duplicates, reversals, masked phones, reference typos) | S4c, S5c | Clean data has zero findings; every injected anomaly is in the ground truth |
 | [ ] | S7 | `reconcile.py`: tiered matching (section 6) | S5b, S6 | Classification equals the ground truth |
