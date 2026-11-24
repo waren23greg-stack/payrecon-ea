@@ -113,7 +113,7 @@ payrecon-ea/
   .github/workflows/ci.yml          tests on Linux (3.11 to 3.13) and Windows (3.12)
   data/                             synthetic datasets only; data/private/ is git-ignored
   docs/                             design notes, SOP, case study                 [planned]
-  scripts/                          generate_sample_data.py and helpers           [planned]
+  scripts/                          generate_sample_data.py and helpers           [next]
   sql/
     schema.sqlite.sql               GENERATED: python -m payrecon.db ddl sqlite
     schema.postgres.sql             GENERATED: python -m payrecon.db ddl postgres
@@ -126,7 +126,7 @@ payrecon-ea/
     adapters/
       base.py                       [done]  Issue, Rejected, AdaptedPayments
       mpesa_statement.py            [done]  statement rows to canonical payment lines
-      orders.py                     [next]     order exports to canonical orders
+      orders.py                     [done]     order exports to canonical orders
       daraja.py                     [planned]  Daraja C2B callbacks to canonical payments
       airtel_mtn.py                 [planned]  Airtel Money and MTN MoMo exports
     db.py                           [done]  DDL generator, connections, one database per run
@@ -217,7 +217,7 @@ box only when the session's "done when" is true.
 | Done | Session | Deliverable | Depends on | Done when |
 |---|---|---|---|---|
 | [x] | S5b | `loader.py`: one transaction per file; writes files, rows, issues, rejects, statement summary; idempotent by file hash | S5a, S4c | Loading a file twice is refused; counts reconcile |
-| [ ] | S5c | `adapters/orders.py`: web, app, USSD and POS exports to canonical orders | S2, S3 | Orders load with references and EAT timestamps |
+| [x] | S5c | `adapters/orders.py`: web, app, USSD and POS exports to canonical orders | S2, S3 | Orders load with references and EAT timestamps |
 | [ ] | S6 | `scripts/generate_sample_data.py`: dirty and clean datasets with ground truth (Paybill, Till, Fuliza lines, duplicates, reversals, masked phones, reference typos) | S4c, S5c | Clean data has zero findings; every injected anomaly is in the ground truth |
 | [ ] | S7 | `reconcile.py`: tiered matching (section 6) | S5b, S6 | Classification equals the ground truth |
 | [ ] | S8 | `checks.py` runner and `sql/checks/*.sql`, in batches by category | S5b, S6 | Each check fails on its anomaly and passes on clean data |
@@ -258,7 +258,7 @@ box only when the session's "done when" is true.
 | M-Pesa Business statement (Paybill or Till) | Not verified | Needs a real sample; layout may differ |
 | Daraja C2B callbacks | Planned | Field names must be verified against Safaricom documentation or the sandbox |
 | Airtel Money, MTN MoMo, card gateways | Planned | No samples yet |
-| Order exports | Planned | Synthetic only |
+| Order exports | Adapter built | Generic template and guessed column aliases; no real shop export checked yet |
 | M-Pesa SMS notifications | Planned | Payer-side format seen (two-digit year, 12-hour time); merchant-side messages needed |
 
 Open questions: the fee and tolerance model, and authentication for the API. Statement
