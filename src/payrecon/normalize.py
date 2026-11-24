@@ -398,3 +398,13 @@ def hints_compatible(a: str, b: str) -> bool:
         return False
     shared = min(len(ma.group(1)), len(mb.group(1)))
     return ma.group(1)[:shared] == mb.group(1)[:shared] and ma.group(2) == mb.group(2)
+
+
+# ---------------------------------------------------------------------------
+# Free text
+# ---------------------------------------------------------------------------
+
+
+def clean_text(raw: object) -> str | None:
+    """Trimmed text without zero-width characters; None for blanks like '-' or 'N/A'."""
+    return _clean(raw)
